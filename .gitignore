@@ -1,0 +1,26 @@
+# Cargo and Rust
+/target/
+/Cargo.lock.bak
+
+# CMake / Qt
+/build/
+/cmake-build-*/
+CMakeUserPresets.json
+*.user
+*.user.*
+*.qmlc
+*.jsc
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.dll
+*.lib
+*.exp
+
+# IDE and OS
+.vs/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
