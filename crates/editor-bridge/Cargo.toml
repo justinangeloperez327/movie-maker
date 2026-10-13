@@ -1,0 +1,14 @@
+[package]
+name = "editor-bridge"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["staticlib"]
+path = "src/lib.rs"
+
+[dependencies]
+cxx = "=1.0.205"
+editor-core = { path = "../editor-core" }

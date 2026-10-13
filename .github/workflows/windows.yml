@@ -1,0 +1,58 @@
+name: Windows foundation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable (MSVC)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+          components: rustfmt, clippy
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Install matching CXX generator
+        run: cargo install cxxbridge-cmd --version 1.0.205 --locked
+
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Rust tests
+        run: cargo test --workspace
+
+      - name: Rust lint
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Configure Qt/C++ and Rust build
+        shell: pwsh
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64 "-DCMAKE_PREFIX_PATH=$env:QT_ROOT_DIR"
+
+      - name: Build Windows desktop application
+        run: cmake --build build --config Release --parallel 2
+
+      - name: Rust-CXX-Qt integration smoke test
+        shell: pwsh
+        run: |
+          & ".\build\apps\desktop\Release\movie_maker.exe" --self-test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
