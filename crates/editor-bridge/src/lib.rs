@@ -31,7 +31,9 @@ fn core_version() -> String {
 }
 
 fn new_project(name: &str) -> Result<Box<ProjectSession>, editor_project::ProjectError> {
-    Ok(Box::new(ProjectSession { document: editor_project::ProjectDocument::new(name)? }))
+    Ok(Box::new(ProjectSession {
+        document: editor_project::ProjectDocument::new(name)?,
+    }))
 }
 
 fn project_from_json(json: &str) -> Result<Box<ProjectSession>, editor_project::ProjectError> {
