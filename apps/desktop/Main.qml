@@ -85,6 +85,11 @@ ApplicationWindow {
     }
     Shortcut { sequence: "F1"; onActivated: aboutDialog.open() }
     Shortcut { sequence: "Ctrl+N"; onActivated: window.requestAction("new") }
+    Shortcut {
+        sequence: "Ctrl+M"
+        enabled: appBackend.hasProject && !appBackend.importing
+        onActivated: mediaImportDialog.open()
+    }
     Shortcut { sequence: "Ctrl+O"; onActivated: window.requestAction("open") }
     Shortcut { sequence: "Ctrl+S"; enabled: appBackend.hasProject; onActivated: window.saveNow() }
     Shortcut {
@@ -110,6 +115,11 @@ ApplicationWindow {
                 onTriggered: saveFileDialog.open()
             }
             MenuSeparator {}
+            MenuItem {
+                text: "Import media (Ctrl+M)"
+                enabled: appBackend.hasProject && !appBackend.importing
+                onTriggered: mediaImportDialog.open()
+            }
             MenuItem { text: "Export"; enabled: false }
             MenuSeparator {}
             MenuItem { text: "Exit"; onTriggered: window.requestAction("exit") }
@@ -266,6 +276,11 @@ ApplicationWindow {
                 MediaPanel {
                     theme: colors
                     mediaCount: appBackend.mediaCount
+                    mediaItems: appBackend.mediaItems
+                    hasProject: appBackend.hasProject
+                    importing: appBackend.importing
+                    pendingImports: appBackend.pendingImports
+                    onImportRequested: mediaImportDialog.open()
                     section: appBackend.activeSection
                     visible: appBackend.mediaPanelVisible
                     SplitView.preferredWidth: 280
@@ -308,9 +323,10 @@ ApplicationWindow {
             anchors.rightMargin: 14
 
             Text {
-                text: appBackend.hasProject
+                text: appBackend.importing ? "Indexing " + appBackend.pendingImports + " media file(s)…"
+                      : appBackend.hasProject
                       ? (appBackend.isModified ? "Unsaved project" : "Saved project") +
-                        " · " + appBackend.trackCount + " tracks · Media editing not yet implemented"
+                        " · " + appBackend.mediaCount + " media · " + appBackend.trackCount + " tracks"
                       : "Create or open a project to begin"
                 color: colors.muted
                 font.pixelSize: 11
@@ -323,6 +339,17 @@ ApplicationWindow {
                 font.pixelSize: 11
             }
         }
+    }
+
+    FileDialog {
+        id: mediaImportDialog
+        title: "Import media"
+        fileMode: FileDialog.OpenFiles
+        nameFilters: [
+            "Media files (*.mp4 *.mov *.mkv *.avi *.webm *.mp3 *.wav *.flac *.m4a *.aac *.ogg *.png *.jpg *.jpeg *.webp *.bmp *.gif *.tif *.tiff)",
+            "All files (*)"
+        ]
+        onAccepted: appBackend.importMedia(selectedFiles)
     }
 
     FileDialog {
@@ -503,7 +530,7 @@ ApplicationWindow {
                 font.pixelSize: 11
             }
             Text {
-                text: "Group 3: project persistence. Playback and editing have not been implemented."
+                text: "Group 4: media import, metadata and preview indexing. Playback and editing are still in development."
                 color: colors.muted
                 font.pixelSize: 11
                 wrapMode: Text.WordWrap

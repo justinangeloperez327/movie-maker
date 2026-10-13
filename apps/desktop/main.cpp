@@ -3,6 +3,10 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
+#include <QEventLoop>
+#include <QFileInfo>
+#include <QTimer>
+#include "media_indexer.h"
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -49,6 +53,58 @@ int main(int argc, char* argv[]) {
         badFile.close();
         if (backend.openProject(invalidUrl) || backend.projectName() != QStringLiteral("CI Sample")) return 9;
         qInfo() << "Rust/CXX/Qt project create, atomic save, load and reject-invalid checks passed";
+        return 0;
+    }
+
+    if (app.arguments().contains(QStringLiteral("--media-self-test"))) {
+        const int index = app.arguments().indexOf(QStringLiteral("--media-self-test"));
+        if (index < 0 || app.arguments().size() <= index + 2) return 10;
+        QTemporaryDir temp;
+        if (!temp.isValid() || !backend.createProject(QStringLiteral("Media smoke test"))) return 11;
+        const QList<QUrl> inputs = {
+            QUrl::fromLocalFile(app.arguments().at(index + 1)),
+            QUrl::fromLocalFile(app.arguments().at(index + 2))
+        };
+        if (!backend.importMedia(inputs)) return 12;
+        QEventLoop loop;
+        QTimer timeout;
+        timeout.setSingleShot(true);
+        QObject::connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
+        QObject::connect(&backend, &AppBackend::importStateChanged, &loop, [&] {
+            if (!backend.importing()) loop.quit();
+        });
+        timeout.start(90'000);
+        if (backend.importing()) loop.exec();
+        if (backend.importing() || backend.mediaCount() != 2) {
+            qCritical() << "FFmpeg indexing did not finish correctly:" << backend.mediaCount();
+            return 13;
+        }
+        const QVariantList items = backend.mediaItems();
+        bool videoFound = false;
+        bool audioFound = false;
+        for (const QVariant& itemValue : items) {
+            const QVariantMap item = itemValue.toMap();
+            const QString kind = item.value(QStringLiteral("kind")).toString();
+            if (kind == QStringLiteral("video")) {
+                videoFound = item.value(QStringLiteral("width")).toInt() > 0
+                    && item.value(QStringLiteral("thumbnailUrl")).toUrl().isLocalFile()
+                    && QFileInfo::exists(item.value(QStringLiteral("thumbnailUrl")).toUrl().toLocalFile());
+            }
+            if (kind == QStringLiteral("audio")) {
+                audioFound = item.value(QStringLiteral("waveformUrl")).toUrl().isLocalFile()
+                    && QFileInfo::exists(item.value(QStringLiteral("waveformUrl")).toUrl().toLocalFile());
+            }
+        }
+        if (!videoFound || !audioFound) {
+            qCritical() << "FFmpeg preview cache missing:" << videoFound << audioFound;
+            return 14;
+        }
+        const QUrl file = QUrl::fromLocalFile(temp.filePath(QStringLiteral("imported.mmproj")));
+        if (!backend.saveProjectAs(file) || !backend.openProject(file) || backend.mediaCount() != 2) {
+            qCritical() << "Rust imported-media persistence failed";
+            return 15;
+        }
+        qInfo() << "Media probes, thumbnails, waveforms, Rust persistence passed";
         return 0;
     }
 

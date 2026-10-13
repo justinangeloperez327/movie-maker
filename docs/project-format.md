@@ -31,7 +31,7 @@ A `.mmproj` file is UTF-8 JSON. The first version's required fields are `format`
 - All project/media/track/clip identifiers are UUIDs.
 - Frame rate is stored as a rational number, never a floating-point timebase.
 - Timeline and source timestamps are non-negative integer **microseconds**. A clip stores `start_us`, `source_in_us`, `duration_us`, `media_id`, and `id`.
-- Media references include `id`, `path`, `kind` (`video`, `audio`, `image`), and nullable `duration_us`.
+- Media references include `id`, `path`, `kind` (`video`, `audio`, `image`), and nullable `duration_us`. Optional Group 4 metadata fields `width`, `height`, and `codec` are backwards-compatible with older version-1 documents.
 - Tracks are `video` or `audio`; initial projects contain one of each.
 - For the initial editing model, clips cannot overlap on the same track, and every clip must reference an existing media entry.
 - Media files themselves are never embedded into projects or modified by project persistence.
@@ -42,7 +42,7 @@ Documents are limited to 16 MiB, reject malformed UTF-8 and unsupported format v
 
 Saving uses **QSaveFile** from Qt, which writes to a temporary file and commits the result without exposing partially written project contents. The Rust library owns serialization and validation. Opening an invalid project leaves the existing session intact.
 
-Current limitations: imported media creation, editing operations, autosave/recovery journals and migrations for future schema versions belong to later implementation groups.
+Media import is available via the Qt media library. Clip editing operations, autosave/recovery journals, and migrations for future schema versions belong to later implementation groups.
 
 ## Workflow
 

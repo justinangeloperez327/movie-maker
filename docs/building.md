@@ -9,6 +9,7 @@ This foundation intentionally targets **Windows x64 and MSVC** only. Qt Quick an
 3. Rust stable toolchain with the `x86_64-pc-windows-msvc` target.
 4. Qt 6.8 or newer desktop libraries built for **MSVC 2022 x64**; ensure Quick and Quick Controls are installed.
 5. CXX bridge generator `cxxbridge-cmd` **1.0.205** in PATH.
+6. `ffmpeg.exe` and `ffprobe.exe` installed for media imports. The executables may be supplied through `MOVIE_MAKER_FFMPEG_DIR` pointing to their directory.
 
 Install the matching bridge generator:
 
@@ -48,4 +49,4 @@ The `--project-self-test` option round-trips a new project through CXX, QSaveFil
 
 ## Known limitations
 
-No media playback, import, editing or export exists yet. Workspace preferences are persisted using QSettings. Continuous integration must pass before considering the foundation validated on a Windows runner.
+Media import, background FFprobe metadata indexing, cached thumbnails and waveforms are implemented. Playback, clip editing and export do not yet exist. Workspace preferences are persisted using QSettings. Continuous integration must pass before considering the foundation validated on a Windows runner.

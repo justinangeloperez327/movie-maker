@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <QList>
+#include <QVariantList>
 #include <QObject>
 #include <QSettings>
 #include <QString>
@@ -23,6 +25,9 @@ class AppBackend final : public QObject {
     Q_PROPERTY(bool isModified READ isModified NOTIFY projectChanged)
     Q_PROPERTY(int mediaCount READ mediaCount NOTIFY projectChanged)
     Q_PROPERTY(int trackCount READ trackCount NOTIFY projectChanged)
+    Q_PROPERTY(QVariantList mediaItems READ mediaItems NOTIFY projectChanged)
+    Q_PROPERTY(bool importing READ importing NOTIFY importStateChanged)
+    Q_PROPERTY(int pendingImports READ pendingImports NOTIFY importStateChanged)
 
 public:
     explicit AppBackend(QObject* parent = nullptr);
@@ -49,11 +54,15 @@ public:
     bool isModified() const;
     int mediaCount() const;
     int trackCount() const;
+    QVariantList mediaItems() const;
+    bool importing() const;
+    int pendingImports() const;
 
     Q_INVOKABLE bool createProject(const QString& name);
     Q_INVOKABLE bool openProject(const QUrl& url);
     Q_INVOKABLE bool saveProject();
     Q_INVOKABLE bool saveProjectAs(const QUrl& url);
+    Q_INVOKABLE bool importMedia(const QList<QUrl>& urls);
 
 signals:
     void darkModeChanged();
@@ -62,6 +71,7 @@ signals:
     void timelineVisibleChanged();
     void activeSectionChanged();
     void projectChanged();
+    void importStateChanged();
     void operationFailed(const QString& detail);
 
 private:
@@ -75,4 +85,6 @@ private:
     std::unique_ptr<ProjectSessionHolder> project_;
     QString projectPath_;
     bool modified_ = false;
+    int pendingImports_ = 0;
+    quint64 projectGeneration_ = 0;
 };

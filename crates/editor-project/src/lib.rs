@@ -74,6 +74,12 @@ pub struct MediaReference {
     pub kind: MediaKind,
     /// Source duration in microseconds; optional for still images.
     pub duration_us: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub width: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub height: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub codec: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -241,6 +247,12 @@ impl ProjectDocument {
             }
             media_ids.insert(media.id.as_str());
             media_by_id.insert(media.id.as_str(), media);
+            if media.width.is_some_and(|value| value == 0 || value > 16384)
+                || media.height.is_some_and(|value| value == 0 || value > 16384)
+                || media.codec.as_ref().is_some_and(|value| value.is_empty() || value.len() > 64 || value.chars().any(char::is_control))
+            {
+                return Err(ProjectError::Invalid("invalid imported media metadata"));
+            }
             if media.path.is_empty()
                 || media.path.len() > 32767
                 || media.path.chars().any(char::is_control)
@@ -308,6 +320,43 @@ impl ProjectDocument {
             }
         }
         Ok(())
+    }
+
+    /// Register a local media reference without modifying the source file.
+    /// A duplicate canonical path leaves this document unchanged.
+    pub fn add_media(
+        &mut self,
+        path: &str,
+        kind: MediaKind,
+        duration_us: Option<u64>,
+        width: Option<u32>,
+        height: Option<u32>,
+        codec: Option<&str>,
+    ) -> Result<bool, ProjectError> {
+        if self.media.iter().any(|item| item.path == path) {
+            return Ok(false);
+        }
+        let entry = MediaReference {
+            id: Uuid::new_v4().to_string(),
+            path: path.to_owned(),
+            kind,
+            duration_us,
+            width,
+            height,
+            codec: codec.map(str::to_owned),
+        };
+        let mut next = self.clone();
+        next.media.push(entry);
+        next.validate()?;
+        if next.to_json()?.len() > MAX_DOCUMENT_BYTES {
+            return Err(ProjectError::TooLarge);
+        }
+        self.media = next.media;
+        Ok(true)
+    }
+
+    pub fn media_json(&self) -> String {
+        serde_json::to_string(&self.media).expect("validated media can serialize")
     }
 
     pub fn media_count(&self) -> usize {
@@ -397,6 +446,9 @@ mod tests {
             path: "sample.mp4".to_owned(),
             kind: MediaKind::Video,
             duration_us: Some(2000),
+            width: Some(1280),
+            height: Some(720),
+            codec: Some("h264".to_owned()),
         });
         assert!(p.validate().is_ok());
         p.timeline.tracks[0].clips.push(Clip {
@@ -407,6 +459,32 @@ mod tests {
             duration_us: 200,
         });
         assert!(p.validate().is_err());
+    }
+
+    #[test]
+    fn media_is_added_only_once_and_survives_roundtrip() {
+        let mut p = ProjectDocument::new("Import").unwrap();
+        assert!(p.add_media(
+            "C:/Clips/first.mp4", MediaKind::Video, Some(1_500_000),
+            Some(1920), Some(1080), Some("h264"),
+        ).unwrap());
+        assert!(!p.add_media(
+            "C:/Clips/first.mp4", MediaKind::Video, Some(1_500_000),
+            Some(1920), Some(1080), Some("h264"),
+        ).unwrap());
+        assert_eq!(p.media_count(), 1);
+        let reopened = ProjectDocument::from_json(p.to_json().unwrap().as_bytes()).unwrap();
+        assert_eq!(p, reopened);
+        assert!(reopened.media_json().contains("h264"));
+    }
+
+    #[test]
+    fn old_version_one_media_entries_still_open() {
+        let mut p = ProjectDocument::new("Old").unwrap();
+        p.add_media("clip.mp4", MediaKind::Video, Some(1000), None, None, None).unwrap();
+        let json = p.to_json().unwrap();
+        assert!(!json.contains("\"codec\""));
+        assert_eq!(ProjectDocument::from_json(json.as_bytes()).unwrap(), p);
     }
 
     #[test]

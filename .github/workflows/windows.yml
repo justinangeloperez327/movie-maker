@@ -35,6 +35,13 @@ jobs:
       - name: Install matching CXX generator
         run: cargo install cxxbridge-cmd --version 1.0.205 --locked
 
+      - name: Install FFmpeg tools for media indexing tests
+        shell: pwsh
+        run: |
+          choco install ffmpeg --yes --no-progress
+          ffmpeg -version
+          ffprobe -version
+
       - name: Check Rust formatting
         run: cargo fmt --all -- --check
 
@@ -61,6 +68,20 @@ jobs:
         shell: pwsh
         run: |
           & ".\build\Release\movie_maker.exe" --project-self-test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Media indexing and persistence smoke test
+        shell: pwsh
+        run: |
+          $folder = Join-Path $env:RUNNER_TEMP "movie-maker-media-fixtures"
+          New-Item -ItemType Directory -Force -Path $folder | Out-Null
+          $video = Join-Path $folder "sample.avi"
+          $audio = Join-Path $folder "sample.wav"
+          ffmpeg -nostdin -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=160x90:rate=10" -t 1 -c:v mpeg4 $video
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ffmpeg -nostdin -hide_banner -loglevel error -y -f lavfi -i "sine=frequency=440:sample_rate=48000" -t 1 -c:a pcm_s16le $audio
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ".\\build\\Release\\movie_maker.exe" --media-self-test $video $audio
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Qt Quick workspace smoke test

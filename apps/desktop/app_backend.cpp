@@ -1,10 +1,17 @@
 #include "app_backend.h"
 
 #include "bridge.h"
+#include "media_indexer.h"
 
 #include <QByteArray>
 #include <QFile>
 #include <QFileInfo>
+#include <QFutureWatcher>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QVariantMap>
+#include <QtConcurrent/QtConcurrent>
 #include <QSaveFile>
 #include <QtGlobal>
 
@@ -135,6 +142,9 @@ bool AppBackend::createProject(const QString& name) {
         const QByteArray utf8 = name.toUtf8();
         auto candidate = std::make_unique<ProjectSessionHolder>(movie_maker::new_project(asRustStr(utf8)));
         project_ = std::move(candidate);
+        ++projectGeneration_;
+        pendingImports_ = 0;
+        emit importStateChanged();
         projectPath_.clear();
         modified_ = true; // New projects must be saved explicitly.
         emit projectChanged();
@@ -174,6 +184,9 @@ bool AppBackend::openProject(const QUrl& url) {
         auto candidate = std::make_unique<ProjectSessionHolder>(movie_maker::project_from_json(asRustStr(bytes)));
         // Preserve the previously opened project if deserialization or validation fails.
         project_ = std::move(candidate);
+        ++projectGeneration_;
+        pendingImports_ = 0;
+        emit importStateChanged();
         projectPath_ = QFileInfo(path).absoluteFilePath();
         modified_ = false;
         emit projectChanged();
@@ -231,4 +244,117 @@ bool AppBackend::saveProjectAs(const QUrl& url) {
         emit operationFailed(QString::fromUtf8(error.what()));
         return false;
     }
+}
+
+QVariantList AppBackend::mediaItems() const {
+    QVariantList items;
+    if (!project_) return items;
+    const rust::String json = project_->value->project_media_json();
+    const QByteArray payload(json.data(), static_cast<qsizetype>(json.size()));
+    const QJsonArray media = QJsonDocument::fromJson(payload).array();
+    items.reserve(media.size());
+    for (const QJsonValue& value : media) {
+        const QJsonObject mediaItem = value.toObject();
+        const QString path = mediaItem.value(QStringLiteral("path")).toString();
+        const QFileInfo file(path);
+        QVariantMap item = mediaItem.toVariantMap();
+        const QString kind = mediaItem.value(QStringLiteral("kind")).toString();
+        const QString codec = mediaItem.value(QStringLiteral("codec")).toString();
+        const int width = mediaItem.value(QStringLiteral("width")).toInt();
+        const int height = mediaItem.value(QStringLiteral("height")).toInt();
+        const quint64 durationUs = static_cast<quint64>(mediaItem.value(QStringLiteral("duration_us")).toDouble());
+        const quint64 seconds = durationUs / 1000000;
+        QString subtitle = kind.toUpper();
+        if (!codec.isEmpty()) subtitle += QStringLiteral(" · ") + codec;
+        if (width > 0 && height > 0) {
+            subtitle += QStringLiteral(" · %1×%2").arg(width).arg(height);
+        }
+        if (durationUs > 0) {
+            subtitle += QStringLiteral(" · %1:%2")
+                .arg(seconds / 60)
+                .arg(seconds % 60, 2, 10, QLatin1Char('0'));
+        }
+        item.insert(QStringLiteral("name"), file.fileName());
+        item.insert(QStringLiteral("subtitle"), subtitle);
+        item.insert(QStringLiteral("missing"), !file.exists());
+        const QString thumbnail = MediaIndexer::cachedThumbnail(path);
+        const QString waveform = MediaIndexer::cachedWaveform(path);
+        item.insert(QStringLiteral("thumbnailUrl"),
+                    thumbnail.isEmpty() ? QUrl() : QUrl::fromLocalFile(thumbnail));
+        item.insert(QStringLiteral("waveformUrl"),
+                    waveform.isEmpty() ? QUrl() : QUrl::fromLocalFile(waveform));
+        items.append(item);
+    }
+    return items;
+}
+
+bool AppBackend::importing() const {
+    return pendingImports_ > 0;
+}
+
+int AppBackend::pendingImports() const {
+    return pendingImports_;
+}
+
+bool AppBackend::importMedia(const QList<QUrl>& urls) {
+    if (!project_) {
+        emit operationFailed(QStringLiteral("Create or open a project before importing media."));
+        return false;
+    }
+    if (urls.isEmpty()) return false;
+    if (MediaIndexer::ffmpegExecutable().isEmpty() || MediaIndexer::ffprobeExecutable().isEmpty()) {
+        emit operationFailed(QStringLiteral("FFmpeg and FFprobe are required for importing. Add them to PATH or set MOVIE_MAKER_FFMPEG_DIR."));
+        return false;
+    }
+    const quint64 generation = projectGeneration_;
+    bool started = false;
+    for (const QUrl& url : urls) {
+        if (!url.isLocalFile()) {
+            emit operationFailed(QStringLiteral("Only local media files are supported."));
+            continue;
+        }
+        const QFileInfo file(url.toLocalFile());
+        const QString canonical = file.canonicalFilePath();
+        if (canonical.isEmpty() || !file.isReadable() || !file.isFile()) {
+            emit operationFailed(QStringLiteral("Cannot read media: %1").arg(url.toLocalFile()));
+            continue;
+        }
+        const QString path = canonical;
+        auto* watcher = new QFutureWatcher<MediaIndexResult>(this);
+        connect(watcher, &QFutureWatcher<MediaIndexResult>::finished, this, [this, watcher, generation]() {
+            const MediaIndexResult indexed = watcher->result();
+            watcher->deleteLater();
+            if (generation != projectGeneration_ || !project_) return;
+            --pendingImports_;
+            emit importStateChanged();
+            if (!indexed.ok()) {
+                emit operationFailed(QStringLiteral("%1: %2").arg(QFileInfo(indexed.path).fileName(), indexed.error));
+                return;
+            }
+            try {
+                const QByteArray pathUtf8 = indexed.path.toUtf8();
+                const QByteArray kindUtf8 = indexed.kind.toUtf8();
+                const QByteArray codecUtf8 = indexed.codec.toUtf8();
+                const bool added = project_->value->project_add_media(
+                    asRustStr(pathUtf8),
+                    asRustStr(kindUtf8),
+                    indexed.durationUs,
+                    indexed.width,
+                    indexed.height,
+                    asRustStr(codecUtf8)
+                );
+                if (added) {
+                    modified_ = true;
+                    emit projectChanged();
+                }
+            } catch (const std::exception& error) {
+                emit operationFailed(QString::fromUtf8(error.what()));
+            }
+        });
+        ++pendingImports_;
+        emit importStateChanged();
+        watcher->setFuture(QtConcurrent::run([path]() { return MediaIndexer::scan(path); }));
+        started = true;
+    }
+    return started;
 }

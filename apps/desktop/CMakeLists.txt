@@ -2,6 +2,8 @@ qt_add_executable(movie_maker WIN32
     main.cpp
     app_backend.cpp
     app_backend.h
+    media_indexer.h
+    media_indexer.cpp
     "${BRIDGE_GENERATED_DIR}/bridge.cpp"
 )
 
@@ -25,6 +27,7 @@ target_link_libraries(movie_maker PRIVATE
     Qt6::Quick
     Qt6::QuickControls2
     Qt6::QuickDialogs2
+    Qt6::Concurrent
     "${RUST_TARGET_DIR}/$<IF:$<CONFIG:Debug>,debug,release>/editor_bridge.lib"
     ws2_32
     userenv

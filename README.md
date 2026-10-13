@@ -2,11 +2,11 @@
 
 A Windows-first, offline-first video editor inspired by classic Windows Movie Maker.
 
-**Technology:** Rust application core, C++20, Qt 6 Quick/QML, CXX bridge. FFmpeg and Direct3D integration are planned for subsequent implementation groups, not implemented yet.
+**Technology:** Rust application core, C++20, Qt 6 Quick/QML, CXX bridge, and FFmpeg command-line tools for media probing and preview indexing. Native FFmpeg libraries, real-time playback, and Direct3D rendering come in later groups.
 
 ## Current state
 
-**Group 3 — Project management.** Create, open and atomically save versioned `.mmproj` project files through the Qt workspace. Rust owns the schema, validation, media references and timeline model, while C++/Qt handles local file I/O and user dialogs. Editing, playback, and export are not yet implemented.
+**Group 4 — Media import and indexing.** Import local video, image, and audio files using native Qt file dialogs. The C++ background indexer uses FFprobe to extract metadata and FFmpeg to generate cached thumbnails and audio waveform PNGs. The Rust project model stores validated media references and metadata inside versioned `.mmproj` project files. Playback, timeline editing, and export are not yet implemented.
 
 ## Build on Windows
 
@@ -17,6 +17,7 @@ Requirements:
 - Rust stable with `x86_64-pc-windows-msvc` target
 - Qt 6.8 or newer, MSVC 2022 64-bit build (Quick and Quick Controls)
 - CXX bridge generator **1.0.205**, matching the Rust `cxx` crate
+- FFmpeg tools (`ffmpeg.exe` and `ffprobe.exe`) installed on PATH, or specify `MOVIE_MAKER_FFMPEG_DIR` pointing to their directory
 
 Install the code generator:
 
@@ -47,12 +48,12 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
-Full build details: [docs/building.md](docs/building.md). Project format: [docs/project-format.md](docs/project-format.md). Architecture: [docs/architecture.md](docs/architecture.md).
+Media importing and cache details: [docs/media-import.md](docs/media-import.md). Full build details: [docs/building.md](docs/building.md). Project format: [docs/project-format.md](docs/project-format.md). Architecture: [docs/architecture.md](docs/architecture.md).
 
 ## Roadmap
 
-Next: Group 4 media import and metadata indexing; then playback, timeline editing, export, GPU acceleration, effects, recovery, and release validation. The first public stable version will be `v1.0.0` only after all release requirements are met.
+Next: Group 5 playback engine, then timeline editing, export, GPU acceleration, effects, recovery, and release validation. The first public stable version will be `v1.0.0` only after all release requirements are met.
 
 ## Licensing
 
-No media codec binaries are bundled in this foundation. Qt and future FFmpeg deployment licenses and codec obligations must be assessed before distribution. See [docs/architecture.md](docs/architecture.md).
+No FFmpeg codec binaries are bundled in this repository. Group 4 invokes a locally installed FFmpeg executable rather than linking to FFmpeg libraries. The native decoding/encoding engine will be introduced in later groups. Qt and future FFmpeg deployment licenses and codec obligations must be assessed before distribution. See [docs/architecture.md](docs/architecture.md).
