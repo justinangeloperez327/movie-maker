@@ -29,13 +29,13 @@ Configure (adjust the Qt path to match your machine):
 ```powershell
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/6.8.3/msvc2022_64"
 cmake --build build --config Release
-& ".\build\apps\desktop\Release\movie_maker.exe" --self-test
+& ".\build\Release\movie_maker.exe" --self-test
 ```
 
 To run the GUI, ensure the Qt installation's `bin` directory is on PATH (or deploy the Qt runtime DLLs using `windeployqt`). The `--self-test` command checks the actual C++ → CXX → Rust bridge and exits without showing a window.
 
 ```powershell
-& ".\build\apps\desktop\Release\movie_maker.exe"
+& ".\build\Release\movie_maker.exe"
 ```
 
 Run the Rust tests:

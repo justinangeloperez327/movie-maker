@@ -54,5 +54,5 @@ jobs:
       - name: Rust-CXX-Qt integration smoke test
         shell: pwsh
         run: |
-          & ".\build\apps\desktop\Release\movie_maker.exe" --self-test
+          & ".\build\Release\movie_maker.exe" --self-test
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

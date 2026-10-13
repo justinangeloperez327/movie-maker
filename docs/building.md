@@ -23,7 +23,7 @@ From a Developer PowerShell for VS 2022:
 ```powershell
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/6.8.3/msvc2022_64"
 cmake --build build --config Release
-& ".\build\apps\desktop\Release\movie_maker.exe" --self-test
+& ".\build\Release\movie_maker.exe" --self-test
 ```
 
 The CMake build invokes Cargo automatically. The Rust `staticlib` is linked into the native Qt executable.
