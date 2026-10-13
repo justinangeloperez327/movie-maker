@@ -2,11 +2,11 @@
 
 A Windows-first, offline-first video editor inspired by classic Windows Movie Maker.
 
-**Technology:** Rust application core, C++20, Qt 6 Quick/QML, CXX bridge, and FFmpeg command-line tools for media probing and preview indexing. Native FFmpeg libraries, real-time playback, and Direct3D rendering come in later groups.
+**Technology:** Rust application core, C++20, Qt Quick/QML, CXX bridge, Qt Multimedia's native FFmpeg-backed playback, and FFmpeg command-line tools for media import indexing. A custom Direct3D compositor and multitrack rendering come in later groups.
 
 ## Current state
 
-**Group 4 — Media import and indexing.** Import local video, image, and audio files using native Qt file dialogs. The C++ background indexer uses FFprobe to extract metadata and FFmpeg to generate cached thumbnails and audio waveform PNGs. The Rust project model stores validated media references and metadata inside versioned `.mmproj` project files. Playback, timeline editing, and export are not yet implemented.
+**Group 5 — Source playback preview.** Select a file in the media library to preview native video/audio playback, pause, seek, approximate frame-step, change speed and volume, or view still images. Qt 6 Multimedia uses FFmpeg to decode local media and synchronize audio/video. Rust still owns the versioned project model and media references. **This previews an individual source file, not the edited timeline**; multitrack playback and export are not yet implemented.
 
 ## Build on Windows
 
@@ -15,7 +15,7 @@ Requirements:
 - Visual Studio 2022 with Desktop development with C++ (MSVC v143 and Windows SDK)
 - CMake 3.26 or newer
 - Rust stable with `x86_64-pc-windows-msvc` target
-- Qt 6.8 or newer, MSVC 2022 64-bit build (Quick and Quick Controls)
+- Qt 6.8 or newer, MSVC 2022 64-bit build (Quick, Quick Controls and **Qt Multimedia** add-on)
 - CXX bridge generator **1.0.205**, matching the Rust `cxx` crate
 - FFmpeg tools (`ffmpeg.exe` and `ffprobe.exe`) installed on PATH, or specify `MOVIE_MAKER_FFMPEG_DIR` pointing to their directory
 
@@ -48,12 +48,12 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
-Media importing and cache details: [docs/media-import.md](docs/media-import.md). Full build details: [docs/building.md](docs/building.md). Project format: [docs/project-format.md](docs/project-format.md). Architecture: [docs/architecture.md](docs/architecture.md).
+Media importing and cache details: [docs/media-import.md](docs/media-import.md). Playback controls: [docs/playback.md](docs/playback.md). Full build details: [docs/building.md](docs/building.md). Project format: [docs/project-format.md](docs/project-format.md). Architecture: [docs/architecture.md](docs/architecture.md).
 
 ## Roadmap
 
-Next: Group 5 playback engine, then timeline editing, export, GPU acceleration, effects, recovery, and release validation. The first public stable version will be `v1.0.0` only after all release requirements are met.
+Next: Group 6 timeline editing, then export, advanced GPU composition, effects, recovery, and release validation. The first public stable version will be `v1.0.0` only after all release requirements are met.
 
 ## Licensing
 
-No FFmpeg codec binaries are bundled in this repository. Group 4 invokes a locally installed FFmpeg executable rather than linking to FFmpeg libraries. The native decoding/encoding engine will be introduced in later groups. Qt and future FFmpeg deployment licenses and codec obligations must be assessed before distribution. See [docs/architecture.md](docs/architecture.md).
+No codec binaries are committed to this repository. Group 4's indexing requires separately installed FFmpeg tools; Group 5's playback uses Qt Multimedia and its FFmpeg runtime dependencies (Qt-distributed libraries must be packaged and licensed appropriately for distribution). Export encoding has not been implemented. Qt and future FFmpeg deployment licenses and codec obligations must be assessed before distribution. See [docs/architecture.md](docs/architecture.md).

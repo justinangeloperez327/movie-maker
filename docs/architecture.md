@@ -4,7 +4,7 @@
 
 A native, Windows-first, offline video editor with a memory-safe editing model and hardware-efficient native media pipeline.
 
-## Group 4 implementation
+## Group 5 implementation
 
 ```text
 Qt Quick / QML Main window
@@ -26,6 +26,14 @@ The `editor-project` crate owns a versioned document schema with media reference
 A C++ QtConcurrent worker runs separate `ffprobe` and `ffmpeg` executables for metadata, preview thumbnails, and short audio waveform representations. Import completion is marshalled back to the Qt UI thread and registered with the mutable Rust ProjectSession via CXX. The media references, codec metadata, dimensions, and duration are persisted in .mmproj. The worker never modifies original media, uses bounded process timeouts, and indexes files asynchronously.
 
 This external-process integration is a bootstrapping solution for media indexing only. It is not the final playback or export pipeline. Executable dependencies must be present in PATH and are not bundled in this group.
+
+## Native source playback subsystem (Group 5)
+
+`PlaybackController` is a C++ QObject with a `QMediaPlayer` and `QAudioOutput`. The Qt Quick `VideoOutput` exposes its `QVideoSink`, which the controller attaches to the player. The controller handles local-file source loading, playback, pausing, seeking, nominal-rate frame stepping, volume, mute, rate control, media errors and source clearing. Qt Multimedia defaults to the FFmpeg media backend on supported Windows builds; its backend is responsible for A/V synchronization.
+
+The Rust-backed `ProjectSession` remains the authoritative owner of which media IDs belong to a project. The selected source is validated against those IDs by the desktop `AppBackend`. Selecting a media item emits a URL/kind change; the native playback controller loads that source. Opening another project clears the selection and playback source so references cannot leak across projects.
+
+This preview plays a **single imported source file**, not the timeline. Qt Multimedia does not expose guaranteed frame-accurate stepping through `QMediaPlayer`; frame step is best-effort seeking using nominal frame rate.
 
 ## Planned native media subsystem
 

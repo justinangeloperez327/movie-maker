@@ -84,6 +84,16 @@ ApplicationWindow {
         }
     }
     Shortcut { sequence: "F1"; onActivated: aboutDialog.open() }
+    Shortcut { sequence: "Space"; enabled: appBackend.previewKind === "video" || appBackend.previewKind === "audio"; onActivated: playback.toggle() }
+    Shortcut { sequence: "Left"; enabled: appBackend.previewKind === "video"; onActivated: playback.stepFrame(-1) }
+    Shortcut { sequence: "Right"; enabled: appBackend.previewKind === "video"; onActivated: playback.stepFrame(1) }
+
+    Connections {
+        target: appBackend
+        function onPreviewChanged() {
+            playback.load(appBackend.previewSource, appBackend.previewKind)
+        }
+    }
     Shortcut { sequence: "Ctrl+N"; onActivated: window.requestAction("new") }
     Shortcut {
         sequence: "Ctrl+M"
@@ -281,6 +291,10 @@ ApplicationWindow {
                     importing: appBackend.importing
                     pendingImports: appBackend.pendingImports
                     onImportRequested: mediaImportDialog.open()
+                    selectedMediaId: appBackend.previewId
+                    onPreviewRequested: function(mediaId) {
+                        appBackend.selectPreviewMedia(mediaId)
+                    }
                     section: appBackend.activeSection
                     visible: appBackend.mediaPanelVisible
                     SplitView.preferredWidth: 280
@@ -289,6 +303,9 @@ ApplicationWindow {
 
                 PreviewPanel {
                     theme: colors
+                    sourceUrl: appBackend.previewSource
+                    sourceKind: appBackend.previewKind
+                    sourceName: appBackend.previewName
                     SplitView.fillWidth: true
                     SplitView.minimumWidth: 320
                 }
@@ -530,7 +547,7 @@ ApplicationWindow {
                 font.pixelSize: 11
             }
             Text {
-                text: "Group 4: media import, metadata and preview indexing. Playback and editing are still in development."
+                text: "Group 5: native media preview playback. Timeline editing is not yet implemented."
                 color: colors.muted
                 font.pixelSize: 11
                 wrapMode: Text.WordWrap

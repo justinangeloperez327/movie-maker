@@ -30,6 +30,7 @@ jobs:
           host: windows
           target: desktop
           arch: win64_msvc2022_64
+          modules: qtmultimedia
           cache: true
 
       - name: Install matching CXX generator
@@ -82,6 +83,24 @@ jobs:
           ffmpeg -nostdin -hide_banner -loglevel error -y -f lavfi -i "sine=frequency=440:sample_rate=48000" -t 1 -c:a pcm_s16le $audio
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & ".\\build\\Release\\movie_maker.exe" --media-self-test $video $audio
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Native playback decode smoke test
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+          QT_MEDIA_BACKEND: ffmpeg
+        run: |
+          $folder = Join-Path $env:RUNNER_TEMP "movie-maker-playback-fixtures"
+          New-Item -ItemType Directory -Force -Path $folder | Out-Null
+          $video = Join-Path $folder "preview.avi"
+          $audio = Join-Path $folder "preview.wav"
+          ffmpeg -nostdin -hide_banner -loglevel error -y -f lavfi -i "testsrc2=size=320x180:rate=25" -t 3 -c:v mpeg4 $video
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ffmpeg -nostdin -hide_banner -loglevel error -y -f lavfi -i "sine=frequency=523:sample_rate=48000" -t 2 -c:a pcm_s16le $audio
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ".\build\Release\movie_maker.exe" --playback-self-test $video $audio
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Qt Quick workspace smoke test

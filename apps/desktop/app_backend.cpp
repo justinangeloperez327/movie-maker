@@ -142,6 +142,7 @@ bool AppBackend::createProject(const QString& name) {
         const QByteArray utf8 = name.toUtf8();
         auto candidate = std::make_unique<ProjectSessionHolder>(movie_maker::new_project(asRustStr(utf8)));
         project_ = std::move(candidate);
+        clearPreview();
         ++projectGeneration_;
         pendingImports_ = 0;
         emit importStateChanged();
@@ -184,6 +185,7 @@ bool AppBackend::openProject(const QUrl& url) {
         auto candidate = std::make_unique<ProjectSessionHolder>(movie_maker::project_from_json(asRustStr(bytes)));
         // Preserve the previously opened project if deserialization or validation fails.
         project_ = std::move(candidate);
+        clearPreview();
         ++projectGeneration_;
         pendingImports_ = 0;
         emit importStateChanged();
@@ -357,4 +359,41 @@ bool AppBackend::importMedia(const QList<QUrl>& urls) {
         started = true;
     }
     return started;
+}
+
+QUrl AppBackend::previewSource() const { return previewSource_; }
+QString AppBackend::previewKind() const { return previewKind_; }
+QString AppBackend::previewName() const { return previewName_; }
+QString AppBackend::previewId() const { return previewId_; }
+
+void AppBackend::clearPreview() {
+    previewSource_ = QUrl();
+    previewKind_.clear();
+    previewName_.clear();
+    previewId_.clear();
+    emit previewChanged();
+}
+
+bool AppBackend::selectPreviewMedia(const QString& mediaId) {
+    if (!project_) return false;
+    for (const QVariant& mediaValue : mediaItems()) {
+        const QVariantMap item = mediaValue.toMap();
+        if (item.value(QStringLiteral("id")).toString() != mediaId) continue;
+        if (item.value(QStringLiteral("missing")).toBool()) {
+            emit operationFailed(QStringLiteral("The source media file is missing. Relink it before playback."));
+            return false;
+        }
+        const QString path = item.value(QStringLiteral("path")).toString();
+        const QString kind = item.value(QStringLiteral("kind")).toString();
+        if (!QFileInfo(path).isFile()) return false;
+        // Only paths already registered in the Rust project are accepted.
+        previewSource_ = QUrl::fromLocalFile(path);
+        previewKind_ = kind;
+        previewName_ = item.value(QStringLiteral("name")).toString();
+        previewId_ = mediaId;
+        emit previewChanged();
+        return true;
+    }
+    emit operationFailed(QStringLiteral("Selected media is not part of this project."));
+    return false;
 }

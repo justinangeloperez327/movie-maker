@@ -28,6 +28,10 @@ class AppBackend final : public QObject {
     Q_PROPERTY(QVariantList mediaItems READ mediaItems NOTIFY projectChanged)
     Q_PROPERTY(bool importing READ importing NOTIFY importStateChanged)
     Q_PROPERTY(int pendingImports READ pendingImports NOTIFY importStateChanged)
+    Q_PROPERTY(QUrl previewSource READ previewSource NOTIFY previewChanged)
+    Q_PROPERTY(QString previewKind READ previewKind NOTIFY previewChanged)
+    Q_PROPERTY(QString previewName READ previewName NOTIFY previewChanged)
+    Q_PROPERTY(QString previewId READ previewId NOTIFY previewChanged)
 
 public:
     explicit AppBackend(QObject* parent = nullptr);
@@ -57,12 +61,18 @@ public:
     QVariantList mediaItems() const;
     bool importing() const;
     int pendingImports() const;
+    QUrl previewSource() const;
+    QString previewKind() const;
+    QString previewName() const;
+    QString previewId() const;
 
     Q_INVOKABLE bool createProject(const QString& name);
     Q_INVOKABLE bool openProject(const QUrl& url);
     Q_INVOKABLE bool saveProject();
     Q_INVOKABLE bool saveProjectAs(const QUrl& url);
     Q_INVOKABLE bool importMedia(const QList<QUrl>& urls);
+    Q_INVOKABLE bool selectPreviewMedia(const QString& mediaId);
+    Q_INVOKABLE void clearPreview();
 
 signals:
     void darkModeChanged();
@@ -72,6 +82,7 @@ signals:
     void activeSectionChanged();
     void projectChanged();
     void importStateChanged();
+    void previewChanged();
     void operationFailed(const QString& detail);
 
 private:
@@ -87,4 +98,8 @@ private:
     bool modified_ = false;
     int pendingImports_ = 0;
     quint64 projectGeneration_ = 0;
+    QUrl previewSource_;
+    QString previewKind_;
+    QString previewName_;
+    QString previewId_;
 };

@@ -12,6 +12,8 @@ Rectangle {
     required property bool hasProject
     required property bool importing
     required property int pendingImports
+    required property string selectedMediaId
+    signal previewRequested(string mediaId)
     signal importRequested()
 
     color: theme.surface
@@ -91,9 +93,11 @@ Rectangle {
                     width: ListView.view.width - 8
                     height: matches ? 66 : 0
                     visible: matches
-                    color: root.theme.raised
+                    color: hoverHandler.hovered || mediaRow.modelData.id === root.selectedMediaId
+                        ? root.theme.hover : root.theme.raised
                     radius: 2
-                    border.color: root.theme.border
+                    border.color: mediaRow.modelData.id === root.selectedMediaId
+                        ? root.theme.accent : root.theme.border
 
                     RowLayout {
                         anchors.fill: parent
@@ -153,6 +157,9 @@ Rectangle {
                     ToolTip.visible: hoverHandler.hovered
                     ToolTip.text: mediaRow.modelData.path
                     HoverHandler { id: hoverHandler }
+                    TapHandler {
+                        onTapped: root.previewRequested(mediaRow.modelData.id)
+                    }
                 }
             }
 

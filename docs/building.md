@@ -7,7 +7,7 @@ This foundation intentionally targets **Windows x64 and MSVC** only. Qt Quick an
 1. Visual Studio 2022, including MSVC v143, Windows 10/11 SDK, and C++ desktop workloads.
 2. CMake 3.26 or newer and Ninja or the Visual Studio CMake generator.
 3. Rust stable toolchain with the `x86_64-pc-windows-msvc` target.
-4. Qt 6.8 or newer desktop libraries built for **MSVC 2022 x64**; ensure Quick and Quick Controls are installed.
+4. Qt 6.8 or newer desktop libraries built for **MSVC 2022 x64**; ensure Quick, Quick Controls and Qt Multimedia are installed.
 5. CXX bridge generator `cxxbridge-cmd` **1.0.205** in PATH.
 6. `ffmpeg.exe` and `ffprobe.exe` installed for media imports. The executables may be supplied through `MOVIE_MAKER_FFMPEG_DIR` pointing to their directory.
 
@@ -47,6 +47,8 @@ The `--self-test` option validates the real Rust-to-C++ string roundtrip. With t
 
 The `--project-self-test` option round-trips a new project through CXX, QSaveFile and QFile, then confirms malformed JSON does not replace the active project.
 
+The Windows CI `--playback-self-test video.avi audio.wav` test validates that the C++ `PlaybackController` decodes real video frames through `QVideoSink`, advances playback time, loads audio, and applies mute/volume commands. The test uses Qt Multimedia's FFmpeg backend.
+
 ## Known limitations
 
-Media import, background FFprobe metadata indexing, cached thumbnails and waveforms are implemented. Playback, clip editing and export do not yet exist. Workspace preferences are persisted using QSettings. Continuous integration must pass before considering the foundation validated on a Windows runner.
+Media import, background FFprobe metadata indexing, cached thumbnails and waveforms are implemented. Individual imported files can now be played as source previews; multitrack timeline playback, clip editing and export do not yet exist. Workspace preferences are persisted using QSettings. Continuous integration must pass before considering the foundation validated on a Windows runner.

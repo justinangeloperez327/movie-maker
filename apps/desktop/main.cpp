@@ -1,4 +1,5 @@
 #include "app_backend.h"
+#include "playback_controller.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -6,6 +7,9 @@
 #include <QEventLoop>
 #include <QFileInfo>
 #include <QTimer>
+#include <QMediaPlayer>
+#include <QVideoSink>
+#include <QVideoFrame>
 #include "media_indexer.h"
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
@@ -23,6 +27,7 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setOrganizationName(QStringLiteral("MovieMaker"));
 
     AppBackend backend;
+    PlaybackController playback;
 
     if (app.arguments().contains(QStringLiteral("--self-test"))) {
         const bool healthy =
@@ -108,8 +113,65 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    // Hardware decoding is selected by Qt Multimedia when available.
+    // This headless test uses the same native controller as the desktop UI.
+    if (app.arguments().contains(QStringLiteral("--playback-self-test"))) {
+        const int index = app.arguments().indexOf(QStringLiteral("--playback-self-test"));
+        if (index < 0 || app.arguments().size() <= index + 2) return 20;
+        const QUrl video = QUrl::fromLocalFile(app.arguments().at(index + 1));
+        const QUrl audio = QUrl::fromLocalFile(app.arguments().at(index + 2));
+        QVideoSink sink;
+        if (!playback.attachVideoSink(&sink) || !playback.load(video, QStringLiteral("video"))) return 21;
+
+        QEventLoop videoLoop;
+        QTimer videoTimer;
+        videoTimer.setSingleShot(true);
+        bool receivedFrame = false;
+        bool advancedPosition = false;
+        QObject::connect(&videoTimer, &QTimer::timeout, &videoLoop, &QEventLoop::quit);
+        QObject::connect(&sink, &QVideoSink::videoFrameChanged, &videoLoop, [&](const QVideoFrame& frame) {
+            if (frame.isValid()) receivedFrame = true;
+            if (receivedFrame && advancedPosition) videoLoop.quit();
+        });
+        QObject::connect(&playback, &PlaybackController::positionChanged, &videoLoop, [&] {
+            if (playback.position() > 0) advancedPosition = true;
+            if (receivedFrame && advancedPosition) videoLoop.quit();
+        });
+        videoTimer.start(20000);
+        playback.play();
+        if (!(receivedFrame && advancedPosition)) videoLoop.exec();
+        playback.pause();
+        if (!receivedFrame || !advancedPosition || playback.errorString().size() > 0) {
+            qCritical() << "Native video decode failed:" << playback.errorString() << receivedFrame << advancedPosition;
+            return 22;
+        }
+
+        if (!playback.load(audio, QStringLiteral("audio"))) return 23;
+        QEventLoop audioLoop;
+        QTimer audioTimer;
+        audioTimer.setSingleShot(true);
+        QObject::connect(&audioTimer, &QTimer::timeout, &audioLoop, &QEventLoop::quit);
+        QObject::connect(&playback, &PlaybackController::durationChanged, &audioLoop, [&] {
+            if (playback.duration() >= 500) audioLoop.quit();
+        });
+        audioTimer.start(15000);
+        if (playback.duration() < 500) audioLoop.exec();
+        if (playback.duration() < 500 || playback.errorString().size() > 0) {
+            qCritical() << "Native audio load failed:" << playback.errorString();
+            return 24;
+        }
+        playback.setVolume(0.4);
+        playback.setMuted(true);
+        if (playback.volume() < 0.39 || !playback.muted()) return 25;
+        playback.clear();
+        if (!playback.source().isEmpty()) return 26;
+        qInfo() << "Native Qt/FFmpeg video decode, seek clock, audio source and controls passed";
+        return 0;
+    }
+
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(QStringLiteral("appBackend"), &backend);
+    engine.rootContext()->setContextProperty(QStringLiteral("playback"), &playback);
     QObject::connect(
         &engine,
         &QQmlApplicationEngine::objectCreationFailed,

@@ -6,7 +6,7 @@ The UI is implemented with Qt Quick/QML. The appearance intentionally uses compa
 
 - Left workspace rail: Media, Effects, Transitions, Titles.
 - Context panel: selected workspace section, with explicit unavailable-feature messaging.
-- Center preview: reserved for native GPU/video output in a later group.
+- Center preview: Qt Multimedia native source playback with a QVideoSink, seek bar, approximate frame stepping, speed and volume control.
 - Right inspector: reserved for selected clip metadata and editing properties.
 - Bottom timeline: vertically resizable editing dock with video and audio track placeholders.
 
@@ -29,7 +29,7 @@ The media browser and inspector can be hidden; the timeline can be collapsed. Qt
 | Ctrl+0 | Restore default workspace |
 | F1 | About application |
 
-Buttons for editing operations that are not yet implemented are deliberately disabled. The UI does not create fake projects, media items, or preview playback.
+Import media, click a file to load its source into the preview, and use Space to play/pause or Left/Right to seek approximately one frame. Buttons for timeline editing operations that are not yet implemented are deliberately disabled. The UI does not create fake projects, media items, or preview playback.
 
 ## Testing
 
