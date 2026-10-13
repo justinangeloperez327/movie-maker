@@ -248,8 +248,12 @@ impl ProjectDocument {
             media_ids.insert(media.id.as_str());
             media_by_id.insert(media.id.as_str(), media);
             if media.width.is_some_and(|value| value == 0 || value > 16384)
-                || media.height.is_some_and(|value| value == 0 || value > 16384)
-                || media.codec.as_ref().is_some_and(|value| value.is_empty() || value.len() > 64 || value.chars().any(char::is_control))
+                || media
+                    .height
+                    .is_some_and(|value| value == 0 || value > 16384)
+                || media.codec.as_ref().is_some_and(|value| {
+                    value.is_empty() || value.len() > 64 || value.chars().any(char::is_control)
+                })
             {
                 return Err(ProjectError::Invalid("invalid imported media metadata"));
             }
@@ -464,14 +468,26 @@ mod tests {
     #[test]
     fn media_is_added_only_once_and_survives_roundtrip() {
         let mut p = ProjectDocument::new("Import").unwrap();
-        assert!(p.add_media(
-            "C:/Clips/first.mp4", MediaKind::Video, Some(1_500_000),
-            Some(1920), Some(1080), Some("h264"),
-        ).unwrap());
-        assert!(!p.add_media(
-            "C:/Clips/first.mp4", MediaKind::Video, Some(1_500_000),
-            Some(1920), Some(1080), Some("h264"),
-        ).unwrap());
+        assert!(p
+            .add_media(
+                "C:/Clips/first.mp4",
+                MediaKind::Video,
+                Some(1_500_000),
+                Some(1920),
+                Some(1080),
+                Some("h264"),
+            )
+            .unwrap());
+        assert!(!p
+            .add_media(
+                "C:/Clips/first.mp4",
+                MediaKind::Video,
+                Some(1_500_000),
+                Some(1920),
+                Some(1080),
+                Some("h264"),
+            )
+            .unwrap());
         assert_eq!(p.media_count(), 1);
         let reopened = ProjectDocument::from_json(p.to_json().unwrap().as_bytes()).unwrap();
         assert_eq!(p, reopened);
@@ -481,7 +497,8 @@ mod tests {
     #[test]
     fn old_version_one_media_entries_still_open() {
         let mut p = ProjectDocument::new("Old").unwrap();
-        p.add_media("clip.mp4", MediaKind::Video, Some(1000), None, None, None).unwrap();
+        p.add_media("clip.mp4", MediaKind::Video, Some(1000), None, None, None)
+            .unwrap();
         let json = p.to_json().unwrap();
         assert!(!json.contains("\"codec\""));
         assert_eq!(ProjectDocument::from_json(json.as_bytes()).unwrap(), p);

@@ -20,7 +20,15 @@ mod ffi {
         fn project_media_count(self: &ProjectSession) -> usize;
         fn project_track_count(self: &ProjectSession) -> usize;
         fn project_media_json(self: &ProjectSession) -> String;
-        fn project_add_media(self: &mut ProjectSession, path: &str, kind: &str, duration_us: u64, width: u32, height: u32, codec: &str) -> Result<bool>;
+        fn project_add_media(
+            self: &mut ProjectSession,
+            path: &str,
+            kind: &str,
+            duration_us: u64,
+            width: u32,
+            height: u32,
+            codec: &str,
+        ) -> Result<bool>;
     }
 }
 
@@ -58,8 +66,13 @@ impl ProjectSession {
     }
 
     fn project_add_media(
-        &mut self, path: &str, kind: &str, duration_us: u64,
-        width: u32, height: u32, codec: &str,
+        &mut self,
+        path: &str,
+        kind: &str,
+        duration_us: u64,
+        width: u32,
+        height: u32,
+        codec: &str,
     ) -> Result<bool, editor_project::ProjectError> {
         use editor_project::MediaKind;
         let kind = match kind {
@@ -69,8 +82,13 @@ impl ProjectSession {
             _ => return Err(editor_project::ProjectError::Invalid("unknown media kind")),
         };
         self.document.add_media(
-            path, kind,
-            if duration_us == 0 { None } else { Some(duration_us) },
+            path,
+            kind,
+            if duration_us == 0 {
+                None
+            } else {
+                Some(duration_us)
+            },
             if width == 0 { None } else { Some(width) },
             if height == 0 { None } else { Some(height) },
             if codec.is_empty() { None } else { Some(codec) },
@@ -111,12 +129,18 @@ mod tests {
     #[test]
     fn bridge_imports_and_deduplicates_media() {
         let mut session = new_project("A demo").unwrap();
-        assert!(session.project_add_media("a.mp4", "video", 1_000_000, 1920, 1080, "h264").unwrap());
-        assert!(!session.project_add_media("a.mp4", "video", 1_000_000, 1920, 1080, "h264").unwrap());
+        assert!(session
+            .project_add_media("a.mp4", "video", 1_000_000, 1920, 1080, "h264")
+            .unwrap());
+        assert!(!session
+            .project_add_media("a.mp4", "video", 1_000_000, 1920, 1080, "h264")
+            .unwrap());
         assert_eq!(session.project_media_count(), 1);
         let reopened = project_from_json(&session.project_json().unwrap()).unwrap();
         assert!(reopened.project_media_json().contains("a.mp4"));
-        assert!(session.project_add_media("x", "unknown", 0, 0, 0, "").is_err());
+        assert!(session
+            .project_add_media("x", "unknown", 0, 0, 0, "")
+            .is_err());
     }
 
     #[test]
