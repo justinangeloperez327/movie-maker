@@ -56,3 +56,13 @@ jobs:
         run: |
           & ".\build\Release\movie_maker.exe" --self-test
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Qt Quick workspace smoke test
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+        run: |
+          & ".\\build\\Release\\movie_maker.exe" --ui-self-test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+

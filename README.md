@@ -6,7 +6,7 @@ A Windows-first, offline-first video editor inspired by classic Windows Movie Ma
 
 ## Current state
 
-**Group 1 — Foundation.** The repository contains a native Qt desktop shell with a real CXX connection to a Rust core, a Rust unit test, and a Windows build workflow. Import, playback, editing, and exporting are not yet implemented.
+**Group 2 — Desktop UI Foundation.** The repository contains a Qt Quick workspace with keyboard navigation, persisted light/dark preference, resizable panels, view menus, a Rust/CXX bridge, and Windows CI smoke tests. Import, playback, editing, and exporting are not yet implemented.
 
 ## Build on Windows
 
@@ -50,7 +50,7 @@ Full build details: [docs/building.md](docs/building.md). Architecture: [docs/ar
 
 ## Roadmap
 
-Next: media import and timeline foundation, then preview, exporting, GPU support, effects, recovery, and release validation. The first public stable version will be `v1.0.0` only after all release requirements are met.
+Next: project persistence and media import, then playback and timeline editing, exports, GPU support, effects, recovery, and release validation. The first public stable version will be `v1.0.0` only after all release requirements are met.
 
 ## Licensing
 

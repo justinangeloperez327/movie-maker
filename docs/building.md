@@ -42,8 +42,8 @@ cargo test --workspace
 
 The CMake configure step calls `cxxbridge` to generate `bridge.h`, `bridge.cpp`, and `rust/cxx.h` into the build directory. The CXX generator version **must exactly match** the version of `cxx` declared in `crates/editor-bridge/Cargo.toml`.
 
-The `--self-test` option validates the real Rust-to-C++ string roundtrip; it does not test GUI rendering or future multimedia functionality.
+The `--self-test` option validates the real Rust-to-C++ string roundtrip. With the Qt runtime available, use `--ui-self-test` to ensure the QML workspace loads, with `QT_QPA_PLATFORM=offscreen` and `QT_QUICK_BACKEND=software` for headless CI. Neither option tests future multimedia functionality.
 
 ## Known limitations
 
-No media playback, import, editing or export exists yet. Continuous integration must pass before considering the foundation validated on a Windows runner.
+No media playback, import, editing or export exists yet. Workspace preferences are persisted using QSettings. Continuous integration must pass before considering the foundation validated on a Windows runner.

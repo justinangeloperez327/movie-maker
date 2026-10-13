@@ -10,6 +10,13 @@ qt_add_qml_module(movie_maker
     VERSION 1.0
     QML_FILES
         Main.qml
+        qml/theme/AppPalette.qml
+        qml/components/WorkspaceButton.qml
+        qml/components/SmallAction.qml
+        qml/panels/MediaPanel.qml
+        qml/panels/PreviewPanel.qml
+        qml/panels/InspectorPanel.qml
+        qml/panels/TimelinePanel.qml
 )
 
 target_include_directories(movie_maker PRIVATE "${BRIDGE_GENERATED_DIR}")
