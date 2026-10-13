@@ -5,7 +5,7 @@ import "../components"
 
 Rectangle {
     id: root
-    required property var palette
+    required property var theme
     color: palette.canvas
 
     ColumnLayout {
@@ -17,14 +17,14 @@ Rectangle {
             Layout.fillWidth: true
             Text {
                 text: "Preview"
-                color: root.palette.text
+                color: root.theme.text
                 font.pixelSize: 14
                 font.weight: Font.DemiBold
                 Layout.fillWidth: true
             }
             Text {
                 text: "1920 × 1080  ·  30 FPS"
-                color: root.palette.muted
+                color: root.theme.muted
                 font.pixelSize: 11
             }
         }
@@ -38,8 +38,8 @@ Rectangle {
                 anchors.centerIn: parent
                 width: Math.max(0, Math.min(parent.width, parent.height * 16 / 9))
                 height: width * 9 / 16
-                color: root.palette.video
-                border.color: root.palette.border
+                color: root.theme.video
+                border.color: root.theme.border
                 radius: 2
                 Text {
                     anchors.centerIn: parent
@@ -57,20 +57,20 @@ Rectangle {
             spacing: 8
             Text {
                 text: "00:00:00:00"
-                color: root.palette.text
+                color: root.theme.text
                 font.pixelSize: 12
                 font.family: "Consolas"
                 Layout.fillWidth: true
             }
             SmallAction {
-                palette: root.palette
+                theme: root.theme
                 text: "◀◀"
                 enabled: false
                 ToolTip.visible: hovered
                 ToolTip.text: "Frame navigation requires playback engine."
             }
             SmallAction {
-                palette: root.palette
+                theme: root.theme
                 text: "Play"
                 primary: true
                 enabled: false
@@ -78,13 +78,13 @@ Rectangle {
                 ToolTip.text: "Playback will be implemented in Group 5."
             }
             SmallAction {
-                palette: root.palette
+                theme: root.theme
                 text: "▶▶"
                 enabled: false
             }
             Text {
                 text: "00:00:00:00"
-                color: root.palette.muted
+                color: root.theme.muted
                 font.pixelSize: 12
                 font.family: "Consolas"
                 Layout.fillWidth: true

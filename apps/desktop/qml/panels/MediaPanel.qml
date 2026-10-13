@@ -5,7 +5,7 @@ import "../components"
 
 Rectangle {
     id: root
-    required property var palette
+    required property var theme
     required property string section
     color: palette.surface
 
@@ -29,13 +29,13 @@ Rectangle {
             Layout.fillWidth: true
             Text {
                 text: root.sectionTitle
-                color: root.palette.text
+                color: root.theme.text
                 font.pixelSize: 14
                 font.weight: Font.DemiBold
                 Layout.fillWidth: true
             }
             SmallAction {
-                palette: root.palette
+                theme: root.theme
                 text: "Import"
                 enabled: false
                 ToolTip.visible: hovered
@@ -46,14 +46,14 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 34
-            color: root.palette.raised
+            color: root.theme.raised
             radius: 2
             Text {
                 anchors.left: parent.left
                 anchors.leftMargin: 12
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Search (coming later)"
-                color: root.palette.muted
+                color: root.theme.muted
                 font.pixelSize: 11
             }
         }
@@ -62,7 +62,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
             color: "transparent"
-            border.color: root.palette.border
+            border.color: root.theme.border
             radius: 2
 
             ColumnLayout {
@@ -74,18 +74,18 @@ Rectangle {
                     width: 44
                     height: 44
                     radius: 2
-                    color: root.palette.raised
+                    color: root.theme.raised
                     Text {
                         anchors.centerIn: parent
                         text: root.section === "media" ? "+" : root.section === "titles" ? "T" : "✦"
-                        color: root.palette.accent
+                        color: root.theme.accent
                         font.pixelSize: 22
                     }
                 }
                 Text {
                     Layout.fillWidth: true
                     text: root.section === "media" ? "Your media library is empty" : "Coming in a later group"
-                    color: root.palette.text
+                    color: root.theme.text
                     font.pixelSize: 12
                     font.weight: Font.Medium
                     horizontalAlignment: Text.AlignHCenter
@@ -94,7 +94,7 @@ Rectangle {
                 Text {
                     Layout.fillWidth: true
                     text: root.sectionDescription
-                    color: root.palette.muted
+                    color: root.theme.muted
                     font.pixelSize: 11
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WordWrap
@@ -103,7 +103,7 @@ Rectangle {
         }
         Text {
             text: "0 items"
-            color: root.palette.muted
+            color: root.theme.muted
             font.pixelSize: 11
         }
     }

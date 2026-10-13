@@ -3,7 +3,7 @@ import QtQuick.Controls
 
 ToolButton {
     id: control
-    required property var palette
+    required property var theme
     property bool selected: false
     property bool primary: false
 
@@ -15,7 +15,7 @@ ToolButton {
         text: control.text
         font.pixelSize: 12
         font.weight: control.primary ? Font.DemiBold : Font.Normal
-        color: control.primary ? "#ffffff" : control.palette.text
+        color: control.primary ? "#ffffff" : control.theme.text
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
@@ -23,9 +23,9 @@ ToolButton {
     background: Rectangle {
         radius: 2
         border.width: control.primary ? 0 : 1
-        border.color: control.selected ? control.palette.accent : control.palette.border
+        border.color: control.selected ? control.theme.accent : control.theme.border
         color: control.primary ?
-                   (control.hovered ? control.palette.accentHover : control.palette.accent) :
-                   (control.selected || control.hovered ? control.palette.raised : control.palette.surface)
+                   (control.hovered ? control.theme.accentHover : control.theme.accent) :
+                   (control.selected || control.hovered ? control.theme.raised : control.theme.surface)
     }
 }

@@ -136,12 +136,12 @@ ApplicationWindow {
             }
             Item { Layout.fillWidth: true }
             SmallAction {
-                palette: colors
+                theme: colors
                 text: appBackend.darkMode ? "Light mode" : "Dark mode"
                 onClicked: appBackend.darkMode = !appBackend.darkMode
             }
             SmallAction {
-                palette: colors
+                theme: colors
                 text: "Export"
                 primary: true
                 enabled: false
@@ -195,7 +195,7 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 symbol: modelData.symbol
                                 caption: modelData.caption
-                                palette: colors
+                                theme: colors
                                 selected: appBackend.activeSection === modelData.section
                                 onClicked: window.openSection(modelData.section)
                             }
@@ -205,14 +205,14 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             symbol: "?"
                             caption: "About"
-                            palette: colors
+                            theme: colors
                             onClicked: aboutDialog.open()
                         }
                     }
                 }
 
                 MediaPanel {
-                    palette: colors
+                    theme: colors
                     section: appBackend.activeSection
                     visible: appBackend.mediaPanelVisible
                     SplitView.preferredWidth: 280
@@ -220,13 +220,13 @@ ApplicationWindow {
                 }
 
                 PreviewPanel {
-                    palette: colors
+                    theme: colors
                     SplitView.fillWidth: true
                     SplitView.minimumWidth: 320
                 }
 
                 InspectorPanel {
-                    palette: colors
+                    theme: colors
                     visible: appBackend.inspectorVisible
                     SplitView.preferredWidth: 265
                     SplitView.minimumWidth: 210
@@ -236,7 +236,7 @@ ApplicationWindow {
 
         TimelinePanel {
             objectName: "timelineDock"
-            palette: colors
+            theme: colors
             visible: appBackend.timelineVisible
             SplitView.minimumHeight: 155
             SplitView.preferredHeight: 245

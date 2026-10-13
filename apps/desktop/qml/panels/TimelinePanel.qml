@@ -5,7 +5,7 @@ import "../components"
 
 Rectangle {
     id: root
-    required property var palette
+    required property var theme
     color: palette.surface
     implicitHeight: 230
 
@@ -19,55 +19,55 @@ Rectangle {
             spacing: 8
             Text {
                 text: "Timeline"
-                color: root.palette.text
+                color: root.theme.text
                 font.pixelSize: 14
                 font.weight: Font.DemiBold
             }
-            Rectangle { width: 1; height: 18; color: root.palette.border }
+            Rectangle { width: 1; height: 18; color: root.theme.border }
             SmallAction {
-                palette: root.palette
+                theme: root.theme
                 text: "Split"
                 enabled: false
                 ToolTip.visible: hovered
                 ToolTip.text: "Timeline splitting is scheduled for Group 6."
             }
             SmallAction {
-                palette: root.palette
+                theme: root.theme
                 text: "Trim"
                 enabled: false
             }
             Item { Layout.fillWidth: true }
             Text {
                 text: "Zoom"
-                color: root.palette.muted
+                color: root.theme.muted
                 font.pixelSize: 11
             }
             SmallAction {
-                palette: root.palette
+                theme: root.theme
                 text: "−"
                 enabled: false
             }
             SmallAction {
-                palette: root.palette
+                theme: root.theme
                 text: "+"
                 enabled: false
             }
         }
 
-        Rectangle { Layout.fillWidth: true; height: 1; color: root.palette.border }
+        Rectangle { Layout.fillWidth: true; height: 1; color: root.theme.border }
 
         RowLayout {
             Layout.fillWidth: true
             Text {
                 text: "TRACK"
                 Layout.preferredWidth: 104
-                color: root.palette.muted
+                color: root.theme.muted
                 font.pixelSize: 10
             }
             Text {
                 text: "00:00         00:10         00:20         00:30         00:40"
                 Layout.fillWidth: true
-                color: root.palette.muted
+                color: root.theme.muted
                 font.pixelSize: 10
                 elide: Text.ElideRight
             }
@@ -86,25 +86,25 @@ Rectangle {
                 Rectangle {
                     Layout.preferredWidth: 104
                     Layout.fillHeight: true
-                    color: root.palette.raised
+                    color: root.theme.raised
                     radius: 2
                     Text {
                         text: modelData.name
                         anchors.centerIn: parent
-                        color: root.palette.text
+                        color: root.theme.text
                         font.pixelSize: 11
                     }
                 }
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    color: root.palette.canvas
-                    border.color: root.palette.border
+                    color: root.theme.canvas
+                    border.color: root.theme.border
                     radius: 2
                     Text {
                         text: modelData.hint
                         anchors.centerIn: parent
-                        color: root.palette.muted
+                        color: root.theme.muted
                         font.pixelSize: 11
                         elide: Text.ElideRight
                         width: parent.width - 20
