@@ -1,4 +1,4 @@
-name: Windows foundation
+name: Windows desktop
 
 on:
   push:
@@ -55,6 +55,12 @@ jobs:
         shell: pwsh
         run: |
           & ".\build\Release\movie_maker.exe" --self-test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Project management roundtrip smoke test
+        shell: pwsh
+        run: |
+          & ".\build\Release\movie_maker.exe" --project-self-test
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Qt Quick workspace smoke test

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.26)
 project(MovieMaker VERSION 0.1.0 LANGUAGES CXX)
 
 if(NOT WIN32 OR NOT MSVC)
-    message(FATAL_ERROR "Group 1 targets Windows x64 with the MSVC toolchain.")
+    message(FATAL_ERROR "The native desktop target currently supports Windows x64 and MSVC.")
 endif()
 
 if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -13,14 +13,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2 QuickDialogs2)
 qt_standard_project_setup(REQUIRES 6.8)
 
 find_program(CARGO_EXECUTABLE cargo REQUIRED)
 find_program(CXXBRIDGE_EXECUTABLE cxxbridge REQUIRED)
 
-# CXX CLI and Rust cxx crate must be the exact same release (see README).
-# Generate stable headers at configure time and rerun configure if bridge source changes.
 set(RUST_BRIDGE_SOURCE "${CMAKE_SOURCE_DIR}/crates/editor-bridge/src/lib.rs")
 set(BRIDGE_GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 file(MAKE_DIRECTORY "${BRIDGE_GENERATED_DIR}/rust")

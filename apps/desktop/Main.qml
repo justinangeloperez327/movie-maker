@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
+import QtQuick.Dialogs
 import "qml/theme"
 import "qml/components"
 import "qml/panels"
@@ -14,7 +15,7 @@ ApplicationWindow {
     height: 820
     minimumWidth: 980
     minimumHeight: 650
-    title: "Movie Maker"
+    title: (appBackend.hasProject ? appBackend.projectName : "Movie Maker") + (appBackend.isModified ? " *" : "") + " — Movie Maker"
     color: colors.canvas
 
     AppPalette {
@@ -22,9 +23,42 @@ ApplicationWindow {
         darkMode: appBackend.darkMode
     }
 
+    property string pendingAction: ""
+    property bool bypassClose: false
+
     function openSection(section) {
         appBackend.activeSection = section
         appBackend.mediaPanelVisible = true
+    }
+
+    function requestAction(action) {
+        pendingAction = action
+        if (appBackend.isModified) unsavedDialog.open()
+        else performPending()
+    }
+
+    function performPending() {
+        const action = pendingAction
+        pendingAction = ""
+        if (action === "new") newProjectDialog.open()
+        else if (action === "open") openFileDialog.open()
+        else if (action === "exit") {
+            bypassClose = true
+            window.close()
+        }
+    }
+
+    function saveNow() {
+        if (!appBackend.hasProject) return
+        if (appBackend.projectPath.length === 0) saveFileDialog.open()
+        else if (appBackend.saveProject() && pendingAction.length > 0) performPending()
+    }
+
+    onClosing: function(close) {
+        if (!bypassClose && appBackend.isModified) {
+            close.accepted = false
+            requestAction("exit")
+        }
     }
 
     Shortcut { sequence: "Ctrl+1"; onActivated: window.openSection("media") }
@@ -50,17 +84,35 @@ ApplicationWindow {
         }
     }
     Shortcut { sequence: "F1"; onActivated: aboutDialog.open() }
+    Shortcut { sequence: "Ctrl+N"; onActivated: window.requestAction("new") }
+    Shortcut { sequence: "Ctrl+O"; onActivated: window.requestAction("open") }
+    Shortcut { sequence: "Ctrl+S"; enabled: appBackend.hasProject; onActivated: window.saveNow() }
+    Shortcut {
+        sequence: "Ctrl+Shift+S"
+        enabled: appBackend.hasProject
+        onActivated: saveFileDialog.open()
+    }
 
     menuBar: MenuBar {
         Menu {
             title: "File"
-            MenuItem { text: "New project"; enabled: false }
-            MenuItem { text: "Open project"; enabled: false }
-            MenuItem { text: "Save project"; enabled: false }
+            MenuItem { text: "New project (Ctrl+N)"; onTriggered: window.requestAction("new") }
+            MenuItem { text: "Open project (Ctrl+O)"; onTriggered: window.requestAction("open") }
+            MenuSeparator {}
+            MenuItem {
+                text: "Save project (Ctrl+S)"
+                enabled: appBackend.hasProject
+                onTriggered: window.saveNow()
+            }
+            MenuItem {
+                text: "Save project as (Ctrl+Shift+S)"
+                enabled: appBackend.hasProject
+                onTriggered: saveFileDialog.open()
+            }
             MenuSeparator {}
             MenuItem { text: "Export"; enabled: false }
             MenuSeparator {}
-            MenuItem { text: "Exit"; onTriggered: window.close() }
+            MenuItem { text: "Exit"; onTriggered: window.requestAction("exit") }
         }
         Menu {
             title: "View"
@@ -130,7 +182,7 @@ ApplicationWindow {
             }
             Rectangle { width: 1; height: 21; color: colors.border }
             Text {
-                text: "Untitled workspace"
+                text: appBackend.hasProject ? appBackend.projectName + (appBackend.isModified ? "  •  Unsaved" : "") : "No project open"
                 color: colors.muted
                 font.pixelSize: 12
             }
@@ -213,6 +265,7 @@ ApplicationWindow {
 
                 MediaPanel {
                     theme: colors
+                    mediaCount: appBackend.mediaCount
                     section: appBackend.activeSection
                     visible: appBackend.mediaPanelVisible
                     SplitView.preferredWidth: 280
@@ -227,6 +280,9 @@ ApplicationWindow {
 
                 InspectorPanel {
                     theme: colors
+                    hasProject: appBackend.hasProject
+                    projectName: appBackend.projectName
+                    trackCount: appBackend.trackCount
                     visible: appBackend.inspectorVisible
                     SplitView.preferredWidth: 265
                     SplitView.minimumWidth: 210
@@ -252,7 +308,10 @@ ApplicationWindow {
             anchors.rightMargin: 14
 
             Text {
-                text: "Workspace ready · Media editing is not yet implemented"
+                text: appBackend.hasProject
+                      ? (appBackend.isModified ? "Unsaved project" : "Saved project") +
+                        " · " + appBackend.trackCount + " tracks · Media editing not yet implemented"
+                      : "Create or open a project to begin"
                 color: colors.muted
                 font.pixelSize: 11
                 Layout.fillWidth: true
@@ -263,6 +322,149 @@ ApplicationWindow {
                 color: colors.muted
                 font.pixelSize: 11
             }
+        }
+    }
+
+    FileDialog {
+        id: openFileDialog
+        title: "Open Movie Maker project"
+        fileMode: FileDialog.OpenFile
+        nameFilters: ["Movie Maker Projects (*.mmproj)"]
+        onAccepted: appBackend.openProject(selectedFile)
+    }
+
+    FileDialog {
+        id: saveFileDialog
+        title: "Save Movie Maker project"
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "mmproj"
+        nameFilters: ["Movie Maker Projects (*.mmproj)"]
+        onAccepted: {
+            if (appBackend.saveProjectAs(selectedFile) && window.pendingAction.length > 0)
+                window.performPending()
+        }
+        onRejected: window.pendingAction = ""
+    }
+
+    Dialog {
+        id: newProjectDialog
+        modal: true
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        title: "New project"
+        width: 420
+        padding: 18
+        background: Rectangle { color: colors.surface; border.color: colors.border; radius: 2 }
+        onOpened: projectNameField.forceActiveFocus()
+        contentItem: ColumnLayout {
+            spacing: 10
+            Text {
+                text: "Project name"
+                color: colors.text
+                font.pixelSize: 12
+            }
+            TextField {
+                id: projectNameField
+                Layout.fillWidth: true
+                text: "Untitled Project"
+                selectByMouse: true
+                maximumLength: 200
+                color: colors.text
+                background: Rectangle {
+                    implicitHeight: 38
+                    color: colors.raised
+                    border.color: colors.border
+                    radius: 2
+                }
+                onAccepted: {
+                    if (text.trim().length > 0 && appBackend.createProject(text))
+                        newProjectDialog.close()
+                }
+            }
+        }
+        footer: RowLayout {
+            spacing: 8
+            Item { Layout.fillWidth: true }
+            SmallAction {
+                theme: colors
+                text: "Cancel"
+                onClicked: newProjectDialog.close()
+            }
+            SmallAction {
+                theme: colors
+                text: "Create project"
+                primary: true
+                enabled: projectNameField.text.trim().length > 0
+                onClicked: {
+                    if (appBackend.createProject(projectNameField.text))
+                        newProjectDialog.close()
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: unsavedDialog
+        title: "Unsaved project"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        width: 440
+        padding: 18
+        background: Rectangle { color: colors.surface; border.color: colors.border; radius: 2 }
+        contentItem: Text {
+            width: 400
+            text: "Save your changes to \"" + appBackend.projectName + "\" before continuing?"
+            wrapMode: Text.WordWrap
+            color: colors.text
+            font.pixelSize: 13
+        }
+        footer: RowLayout {
+            spacing: 8
+            SmallAction {
+                theme: colors
+                text: "Discard"
+                onClicked: { unsavedDialog.close(); window.performPending() }
+            }
+            Item { Layout.fillWidth: true }
+            SmallAction {
+                theme: colors
+                text: "Cancel"
+                onClicked: { window.pendingAction = ""; unsavedDialog.close() }
+            }
+            SmallAction {
+                theme: colors
+                text: "Save"
+                primary: true
+                onClicked: { unsavedDialog.close(); window.saveNow() }
+            }
+        }
+    }
+
+    Connections {
+        target: appBackend
+        function onOperationFailed(detail) {
+            errorDialog.errorText = detail
+            errorDialog.open()
+        }
+    }
+
+    Dialog {
+        id: errorDialog
+        property string errorText: ""
+        title: "Project error"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        width: 450
+        padding: 18
+        standardButtons: Dialog.Ok
+        background: Rectangle { color: colors.surface; border.color: colors.border; radius: 2 }
+        contentItem: Text {
+            text: errorDialog.errorText
+            wrapMode: Text.WordWrap
+            color: colors.text
+            font.pixelSize: 12
         }
     }
 
@@ -301,7 +503,7 @@ ApplicationWindow {
                 font.pixelSize: 11
             }
             Text {
-                text: "Group 2: desktop workspace. Playback and editing have not been implemented."
+                text: "Group 3: project persistence. Playback and editing have not been implemented."
                 color: colors.muted
                 font.pixelSize: 11
                 wrapMode: Text.WordWrap

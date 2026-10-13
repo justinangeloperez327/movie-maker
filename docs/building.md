@@ -44,6 +44,8 @@ The CMake configure step calls `cxxbridge` to generate `bridge.h`, `bridge.cpp`,
 
 The `--self-test` option validates the real Rust-to-C++ string roundtrip. With the Qt runtime available, use `--ui-self-test` to ensure the QML workspace loads, with `QT_QPA_PLATFORM=offscreen` and `QT_QUICK_BACKEND=software` for headless CI. Neither option tests future multimedia functionality.
 
+The `--project-self-test` option round-trips a new project through CXX, QSaveFile and QFile, then confirms malformed JSON does not replace the active project.
+
 ## Known limitations
 
 No media playback, import, editing or export exists yet. Workspace preferences are persisted using QSettings. Continuous integration must pass before considering the foundation validated on a Windows runner.

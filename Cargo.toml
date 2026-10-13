@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/editor-core",
+    "crates/editor-project",
     "crates/editor-bridge",
 ]
 resolver = "2"

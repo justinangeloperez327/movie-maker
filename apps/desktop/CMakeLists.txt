@@ -24,6 +24,7 @@ target_include_directories(movie_maker PRIVATE "${BRIDGE_GENERATED_DIR}")
 target_link_libraries(movie_maker PRIVATE
     Qt6::Quick
     Qt6::QuickControls2
+    Qt6::QuickDialogs2
     "${RUST_TARGET_DIR}/$<IF:$<CONFIG:Debug>,debug,release>/editor_bridge.lib"
     ws2_32
     userenv

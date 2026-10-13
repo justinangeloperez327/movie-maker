@@ -6,6 +6,7 @@ import "../components"
 Rectangle {
     id: root
     required property var theme
+    required property int mediaCount
     required property string section
     color: palette.surface
 
@@ -102,7 +103,7 @@ Rectangle {
             }
         }
         Text {
-            text: "0 items"
+            text: root.mediaCount + " items"
             color: root.theme.muted
             font.pixelSize: 11
         }

@@ -12,3 +12,4 @@ path = "src/lib.rs"
 [dependencies]
 cxx = "=1.0.205"
 editor-core = { path = "../editor-core" }
+editor-project = { path = "../editor-project" }

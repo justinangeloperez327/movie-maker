@@ -2,14 +2,16 @@
 
 #include <QCoreApplication>
 #include <QDebug>
+#include <QFile>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
 #include <QStringList>
+#include <QTemporaryDir>
+#include <QUrl>
 
 int main(int argc, char* argv[]) {
-    // Styling is set before constructing Qt Quick Controls.
     QQuickStyle::setStyle(QStringLiteral("Basic"));
 
     QGuiApplication app(argc, argv);
@@ -26,8 +28,27 @@ int main(int argc, char* argv[]) {
             qCritical() << "Rust/CXX bridge self-test failed";
             return 1;
         }
-        qInfo() << "Rust/CXX bridge OK:" << backend.engineName()
-                << backend.coreVersion();
+        qInfo() << "Rust/CXX bridge OK:" << backend.engineName() << backend.coreVersion();
+        return 0;
+    }
+
+    // End-to-end cross-language project test: Rust create/serialize/parse,
+    // Qt QSaveFile write and QFile read, plus failure preserving open state.
+    if (app.arguments().contains(QStringLiteral("--project-self-test"))) {
+        QTemporaryDir folder;
+        if (!folder.isValid()) return 4;
+        const QUrl projectUrl = QUrl::fromLocalFile(folder.filePath(QStringLiteral("example.mmproj")));
+        if (!backend.createProject(QStringLiteral("CI Sample")) || !backend.isModified()) return 5;
+        if (!backend.saveProjectAs(projectUrl) || backend.isModified()) return 6;
+        if (!backend.openProject(projectUrl) || backend.projectName() != QStringLiteral("CI Sample")
+            || backend.trackCount() != 2 || backend.mediaCount() != 0) return 7;
+        const QUrl invalidUrl = QUrl::fromLocalFile(folder.filePath(QStringLiteral("bad.mmproj")));
+        QFile badFile(invalidUrl.toLocalFile());
+        if (!badFile.open(QIODevice::WriteOnly)) return 8;
+        badFile.write("{invalid");
+        badFile.close();
+        if (backend.openProject(invalidUrl) || backend.projectName() != QStringLiteral("CI Sample")) return 9;
+        qInfo() << "Rust/CXX/Qt project create, atomic save, load and reject-invalid checks passed";
         return 0;
     }
 
@@ -49,8 +70,6 @@ int main(int argc, char* argv[]) {
             qCritical() << "Qt Quick workspace smoke test failed";
             return 2;
         }
-
-        // Exercise QObject state change notifications without modifying persisted settings.
         const QString originalSection = backend.activeSection();
         backend.setActiveSection(QStringLiteral("effects"));
         const bool sectionChanged = backend.activeSection() == QStringLiteral("effects");
@@ -59,7 +78,6 @@ int main(int argc, char* argv[]) {
             qCritical() << "Qt workspace backend state test failed";
             return 3;
         }
-
         qInfo() << "Qt Quick workspace loaded and backend state updated";
         return 0;
     }

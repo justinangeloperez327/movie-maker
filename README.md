@@ -6,7 +6,7 @@ A Windows-first, offline-first video editor inspired by classic Windows Movie Ma
 
 ## Current state
 
-**Group 2 — Desktop UI Foundation.** The repository contains a Qt Quick workspace with keyboard navigation, persisted light/dark preference, resizable panels, view menus, a Rust/CXX bridge, and Windows CI smoke tests. Import, playback, editing, and exporting are not yet implemented.
+**Group 3 — Project management.** Create, open and atomically save versioned `.mmproj` project files through the Qt workspace. Rust owns the schema, validation, media references and timeline model, while C++/Qt handles local file I/O and user dialogs. Editing, playback, and export are not yet implemented.
 
 ## Build on Windows
 
@@ -30,6 +30,7 @@ Configure (adjust the Qt path to match your machine):
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="C:/Qt/6.8.3/msvc2022_64"
 cmake --build build --config Release
 & ".\build\Release\movie_maker.exe" --self-test
+& ".\build\Release\movie_maker.exe" --project-self-test
 ```
 
 To run the GUI, ensure the Qt installation's `bin` directory is on PATH (or deploy the Qt runtime DLLs using `windeployqt`). The `--self-test` command checks the actual C++ → CXX → Rust bridge and exits without showing a window.
@@ -46,11 +47,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
-Full build details: [docs/building.md](docs/building.md). Architecture: [docs/architecture.md](docs/architecture.md).
+Full build details: [docs/building.md](docs/building.md). Project format: [docs/project-format.md](docs/project-format.md). Architecture: [docs/architecture.md](docs/architecture.md).
 
 ## Roadmap
 
-Next: project persistence and media import, then playback and timeline editing, exports, GPU support, effects, recovery, and release validation. The first public stable version will be `v1.0.0` only after all release requirements are met.
+Next: Group 4 media import and metadata indexing; then playback, timeline editing, export, GPU acceleration, effects, recovery, and release validation. The first public stable version will be `v1.0.0` only after all release requirements are met.
 
 ## Licensing
 

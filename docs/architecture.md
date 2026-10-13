@@ -4,7 +4,7 @@
 
 A native, Windows-first, offline video editor with a memory-safe editing model and hardware-efficient native media pipeline.
 
-## Group 2 implementation
+## Group 3 implementation
 
 ```text
 Qt Quick / QML Main window
@@ -19,7 +19,7 @@ CXX-generated C++ glue + Rust staticlib
 Rust editor-bridge -> Rust editor-core
 ```
 
-The core owns the application identity and will own project, timeline, editing operations, jobs, and cache policies in later groups. Qt handles UI rendering and event dispatch. The QObject host owns persisted workspace state and exposes it to QML through notifyable properties; this is presentation state only, not editable project data. CXX marshals a small, explicit bridge API. The foundation intentionally does **not** pretend to play video.
+The `editor-project` crate owns a versioned document schema with media references, rational frame rates and timeline tracks. A Rust opaque `ProjectSession` is held in the C++ desktop backend through CXX. Rust validates documents and generates canonical JSON; Qt saves them through `QSaveFile` for safe replacement. Failed opens never replace the active project. Qt handles UI rendering and event dispatch. The QObject host owns persisted workspace state and exposes it to QML through notifyable properties; this is presentation state only, not editable project data. CXX marshals a small, explicit bridge API. The foundation intentionally does **not** pretend to play video.
 
 ## Planned native media subsystem
 
